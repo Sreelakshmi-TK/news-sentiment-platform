@@ -18,6 +18,8 @@ RDS_USERNAME = "postgres"
 RDS_PASSWORD = "NewsPlatform123"
 
 
+# ---------------- DATABASE ---------------- #
+
 def get_database_connection():
     return psycopg2.connect(
         host=RDS_HOST,
@@ -44,7 +46,7 @@ def fetch_news_data():
         content,
         sentiment_label,
         sentiment_score
-    FROM news_articles
+    FROM newss_articles
     ORDER BY id DESC
     LIMIT 50
     """
@@ -56,13 +58,37 @@ def fetch_news_data():
     return dataframe
 
 
+# ---------------- UI HEADER ---------------- #
+
 st.title("News Sentiment Analysis Dashboard")
+
+st.markdown(
+    """
+    Real-time sentiment analytics dashboard powered by
+    AWS Lambda, PostgreSQL, Amazon S3, EventBridge,
+    Streamlit, and NewsAPI.
+    """
+)
+
+# ---------------- LOAD DATA ---------------- #
 
 dataframe = fetch_news_data()
 
 if dataframe.empty:
     st.warning("No news articles found in database.")
     st.stop()
+
+# ---------------- DATA CLEANING ---------------- #
+
+dataframe["published_at"] = pd.to_datetime(
+    dataframe["published_at"]
+)
+
+dataframe["published_at"] = dataframe[
+    "published_at"
+].dt.strftime("%Y-%m-%d %H:%M")
+
+# ---------------- METRICS ---------------- #
 
 total_articles = len(dataframe)
 
@@ -78,45 +104,121 @@ neutral_count = len(
     dataframe[dataframe["sentiment_label"] == "neutral"]
 )
 
-col1, col2, col3, col4 = st.columns(4)
+avg_sentiment = round(
+    dataframe["sentiment_score"].mean(),
+    2
+)
+
+col1, col2, col3, col4, col5 = st.columns(5)
 
 col1.metric("Total Articles", total_articles)
 col2.metric("Positive", positive_count)
 col3.metric("Negative", negative_count)
 col4.metric("Neutral", neutral_count)
+col5.metric("Avg Sentiment", avg_sentiment)
 
-sentiment_chart = px.pie(
-    dataframe,
-    names="sentiment_label",
-    title="Sentiment Distribution"
+st.divider()
+
+# ---------------- CHARTS ---------------- #
+
+chart_col1, chart_col2 = st.columns(2)
+
+with chart_col1:
+    sentiment_chart = px.pie(
+        dataframe,
+        names="sentiment_label",
+        title="Sentiment Distribution",
+        hole=0.45
+    )
+
+    st.plotly_chart(
+        sentiment_chart,
+        use_container_width=True
+    )
+
+with chart_col2:
+    sentiment_bar = px.histogram(
+        dataframe,
+        x="sentiment_label",
+        title="Sentiment Frequency",
+        text_auto=True
+    )
+
+    st.plotly_chart(
+        sentiment_bar,
+        use_container_width=True
+    )
+
+st.divider()
+
+# ---------------- FILTERS ---------------- #
+
+st.subheader("News Analytics Table")
+
+filter_col1, filter_col2 = st.columns(2)
+
+sentiment_filter = filter_col1.selectbox(
+    "Filter by Sentiment",
+    ["All", "positive", "negative", "neutral"]
 )
 
-st.plotly_chart(sentiment_chart, use_container_width=True)
-
-sentiment_timeline = px.histogram(
-    dataframe,
-    x="sentiment_label",
-    title="Sentiment Frequency"
+search_query = filter_col2.text_input(
+    "Search Article Title"
 )
 
-st.plotly_chart(sentiment_timeline, use_container_width=True)
+filtered_dataframe = dataframe.copy()
 
-st.subheader("Latest News Articles")
+if sentiment_filter != "All":
+    filtered_dataframe = filtered_dataframe[
+        filtered_dataframe["sentiment_label"]
+        == sentiment_filter
+    ]
 
-for _, row in dataframe.iterrows():
-    with st.container():
-        st.markdown(f"### {row['title']}")
+if search_query:
+    filtered_dataframe = filtered_dataframe[
+        filtered_dataframe["title"]
+        .str.contains(search_query, case=False)
+    ]
 
-        st.write(f"Source: {row['source_name']}")
+# ---------------- SENTIMENT COLORS ---------------- #
 
-        st.write(f"Sentiment: {row['sentiment_label']}")
+def color_sentiment(value):
+    if value == "positive":
+        return "background-color: #163d1b; color: #7CFC8A;"
+    elif value == "negative":
+        return "background-color: #3d1616; color: #ff8080;"
+    elif value == "neutral":
+        return "background-color: #2f2f2f; color: #d3d3d3;"
+    return ""
 
-        st.write(f"Score: {row['sentiment_score']}")
 
-        st.write(row["description"])
+display_dataframe = filtered_dataframe[
+    [
+        "published_at",
+        "source_name",
+        "title",
+        "sentiment_label",
+        "sentiment_score",
+        "article_url"
+    ]
+]
 
-        st.markdown(
-            f"[Read Full Article]({row['article_url']})"
-        )
+styled_dataframe = display_dataframe.style.map(
+    color_sentiment,
+    subset=["sentiment_label"]
+)
 
-        st.divider()
+# ---------------- TABLE ---------------- #
+
+st.dataframe(
+    styled_dataframe,
+    use_container_width=True,
+    hide_index=True,
+    height=650
+)
+
+# ---------------- FOOTER ---------------- #
+
+st.caption(
+    "Auto-refresh enabled every 5 minutes"
+)
