@@ -19,9 +19,10 @@ S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 AWS_REGION = os.getenv("AWS_REGION")
 
 NEWS_API_URL = (
-    f"https://newsapi.org/v2/top-headlines?"
-    f"country=in&"
-    f"category=technology&"
+    f"https://newsapi.org/v2/everything?"
+    f"q=technology&"
+    f"language=en&"
+    f"sortBy=publishedAt&"
     f"pageSize=20&"
     f"apiKey={NEWS_API_KEY}"
 )
@@ -29,8 +30,16 @@ NEWS_API_URL = (
 
 def fetch_news_articles():
     response = requests.get(NEWS_API_URL)
+
     response.raise_for_status()
-    return response.json()
+
+    data = response.json()
+
+    articles = data.get("articles", [])
+
+    print(f"Articles fetched: {len(articles)}")
+
+    return data
 
 
 def upload_raw_json_to_s3(news_data):
@@ -60,6 +69,7 @@ def analyze_sentiment(text):
         return "neutral", 0.0
 
     analysis = TextBlob(text)
+
     polarity = analysis.sentiment.polarity
 
     if polarity > 0:
@@ -73,6 +83,10 @@ def analyze_sentiment(text):
 
 
 def insert_articles_into_rds(articles):
+    if not articles:
+        print("No articles received from NewsAPI")
+        return
+
     connection = psycopg2.connect(
         host=RDS_HOST,
         port=RDS_PORT,
@@ -84,7 +98,7 @@ def insert_articles_into_rds(articles):
     cursor = connection.cursor()
 
     insert_query = """
-    INSERT INTO news_articles (
+    INSERT INTO newss_articles (
         source_name,
         author,
         title,
@@ -99,9 +113,14 @@ def insert_articles_into_rds(articles):
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
 
+    inserted_count = 0
+
     for article in articles:
         title = article.get("title", "")
         description = article.get("description", "")
+
+        if not title:
+            continue
 
         sentiment_input = f"{title} {description}"
 
@@ -124,12 +143,14 @@ def insert_articles_into_rds(articles):
 
         cursor.execute(insert_query, values)
 
+        inserted_count += 1
+
     connection.commit()
 
     cursor.close()
     connection.close()
 
-    print("News articles inserted into RDS successfully")
+    print(f"News articles inserted into RDS successfully: {inserted_count}")
 
 
 def lambda_handler(event, context):
