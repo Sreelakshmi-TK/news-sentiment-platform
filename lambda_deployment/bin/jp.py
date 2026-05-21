@@ -1,4 +1,4 @@
-#!C:\Users\Lenovo\anaconda3\python.exe
+#!/var/lang/bin/python3.11
 
 import sys
 import json

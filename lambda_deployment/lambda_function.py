@@ -1,25 +1,11 @@
-
 import json
 import os
 from datetime import datetime
-from pathlib import Path
 
 import boto3
 import psycopg2
 import requests
-from dotenv import load_dotenv
 from textblob import TextBlob
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-ENV_FILE = BASE_DIR / "config" / ".env"
-
-load_dotenv(dotenv_path=ENV_FILE)
-
-
-NEWS_API_KEY = os.getenv("NEWS_API_KEY")
-
-
 
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
