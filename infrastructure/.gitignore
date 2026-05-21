@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+
+# Environment files
+.env
+
+# Virtual environments
+venv/
+.venv/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Lambda deployment packages
+*.zip
+
+# Streamlit cache
+.streamlit/
+
+# Python build files
+build/
+dist/
+*.egg-info/
