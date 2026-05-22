@@ -1,6 +1,6 @@
-streamlit
 pandas
-sqlalchemy
-psycopg2-binary
-python-dotenv
 plotly
+psycopg2-binary
+streamlit
+streamlit-autorefresh
+boto3
