@@ -23,6 +23,28 @@
         "app.py",
         "--server.port=8051",
         "--server.address=0.0.0.0"
+      ],
+      "environment": [
+        {
+          "name": "RDS_HOST",
+          "value": "news-platform-postgres.c1iccwg44xf2.ap-south-1.rds.amazonaws.com"
+        },
+        {
+          "name": "RDS_PORT",
+          "value": "5432"
+        },
+        {
+          "name": "RDS_DATABASE",
+          "value": "newsplatformdatabase"
+        },
+        {
+          "name": "RDS_USERNAME",
+          "value": "postgres"
+        },
+        {
+          "name": "RDS_PASSWORD",
+          "value": "NewsPlatform123"
+        }
       ]
     }
   ]

@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 import plotly.express as px
 import psycopg2
 import streamlit as st
@@ -11,11 +12,13 @@ st.set_page_config(
 
 st_autorefresh(interval=300000, key="dashboard_refresh")
 
-RDS_HOST = "news-platform-postgres.c1iccwg44xf2.ap-south-1.rds.amazonaws.com"
-RDS_PORT = "5432"
-RDS_DATABASE = "newsplatformdatabase"
-RDS_USERNAME = "postgres"
-RDS_PASSWORD = "NewsPlatform123"
+
+
+RDS_HOST = os.getenv("RDS_HOST")
+RDS_PORT = os.getenv("RDS_PORT")
+RDS_DATABASE = os.getenv("RDS_DATABASE")
+RDS_USERNAME = os.getenv("RDS_USERNAME")
+RDS_PASSWORD = os.getenv("RDS_PASSWORD")
 
 
 # ---------------- DATABASE ---------------- #
