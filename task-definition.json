@@ -1,0 +1,29 @@
+{
+  "family": "news-streamlit-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::981914209103:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "streamlit-dashboard",
+      "image": "981914209103.dkr.ecr.ap-south-1.amazonaws.com/news-streamlit-dashboard:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8051,
+          "hostPort": 8051,
+          "protocol": "tcp"
+        }
+      ],
+      "command": [
+        "streamlit",
+        "run",
+        "app.py",
+        "--server.port=8051",
+        "--server.address=0.0.0.0"
+      ]
+    }
+  ]
+}
