@@ -35,30 +35,45 @@ def get_database_connection():
 
 def fetch_news_data():
     connection = get_database_connection()
-
-    query = """
-    SELECT
-        id,
-        source_name,
-        author,
-        title,
-        description,
-        article_url,
-        image_url,
-        published_at,
-        content,
-        sentiment_label,
-        sentiment_score
-    FROM newss_articles
-    ORDER BY id DESC
-    LIMIT 50
-    """
-
-    dataframe = pd.read_sql(query, connection)
-
+    
+    from datetime import datetime, timedelta
+    
+    for days_back in range(7):
+        check_date = (datetime.utcnow().date() 
+                     - timedelta(days=days_back))
+        
+        query = """
+            SELECT
+                id, source_name, author, title,
+                description, article_url, image_url,
+                published_at, content,
+                sentiment_label, sentiment_score
+            FROM newss_articles
+            WHERE DATE(published_at) = %s
+            ORDER BY published_at DESC
+            LIMIT 50
+        """
+        
+        dataframe = pd.read_sql(
+            query, connection, 
+            params=[check_date]
+        )
+        
+        if not dataframe.empty:
+            connection.close()
+            if days_back == 0:
+                st.success(
+                    f"Showing today's news — {check_date}"
+                )
+            else:
+                st.warning(
+                    f"Today's news unavailable. "
+                    f"Showing: {check_date}"
+                )
+            return dataframe
+    
     connection.close()
-
-    return dataframe
+    return pd.DataFrame()
 
 
 # ---------------- UI HEADER ---------------- #
